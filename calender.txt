@@ -1,0 +1,890 @@
+#include "iGraphics.h"
+#include<stdio.h>
+#include<windows.h>
+#include<string.h>
+
+void calculate();
+void saveeventinfile();
+int check(int mx,int my);
+int detertotalday(int x,int y);
+void strdel(char *p);
+void sortevent();
+void deleteevent(int index1);
+void saveother(int box);
+void strdelcursor(char *p);
+
+FILE *fp;
+int t=0,tdom,year1=0,display=0,tp=0,tkk=0,box=0,itemp=0,cursor=0,i,j,m,cnt=0,k,index=0;
+int timerver=0,todayvalue=0,determinenote[50]={0};
+double pen;
+char str[7][4],d[31][3],month[12][4],year[100][5],ch[2];
+
+typedef struct{
+    char dayname[3];
+    int day;
+    int month;
+    int year;
+    int daycount;
+}daytype;
+
+daytype today,monthfd;
+
+typedef struct{
+    int dayvalue;
+    daytype thatday;
+    char from[16];
+    char to[16];
+    char title[32];
+    char location[72];
+    char note[72];
+    char note2[72];
+}eventtype;
+
+eventtype event[50],temp;
+
+typedef struct
+{
+    int x1;
+    int x2;
+    int y1;
+    int y2;
+    daytype date;
+}position;
+
+position dayposition[31];
+
+void iDraw()
+{
+    iClear();
+    iSetColor(40,40,40);
+    iFilledRectangle(0,0,560,600);
+    iSetColor(255,255,255);
+    if(display==0)
+    {
+        for(i=6;i>-1;i--)
+        {
+            for(j=0;j<7;j++)
+            {
+                iRectangle(60*(j+1), 60*(i+1), 60, 60);
+                if(i==6)
+                    iText(60*(j+1)+10, 60*(i+1)+27,str[j], GLUT_BITMAP_HELVETICA_18);
+
+                else if((j+1)%7==monthfd.daycount && i==5)
+                {
+                    t=1;
+                    m=0;
+                }
+                if(t)
+                {
+                    if(m+1==today.day && today.month==monthfd.month && today.year==monthfd.year)
+                    {
+                        iSetColor(0,100,250);
+                        iFilledRectangle(60*(j+1)+1, 60*(i+1)+1, 58, 58);
+                        iSetColor(0,0,0);
+                        for(pen=0;pen<1;pen+=.1)
+                            iRectangle(60*(j+1)+5+pen, 60*(i+1)+5+pen, 50-pen*2, 50-pen*2);
+                        iSetColor(255,255,255);
+                    }
+                    iText(60*(j+1)+20, 60*(i+1)+27,d[m], GLUT_BITMAP_HELVETICA_18);
+
+                    for(k=0;k<=cnt;k++)
+                    {
+                        if(m+1==event[k].thatday.day && monthfd.month==event[k].thatday.month && monthfd.year==event[k].thatday.year)
+                        {
+                            iSetColor(255,0,0);
+                            iText(60*(j+1)+14, 60*(i+1)+15,"*event", GLUT_BITMAP_HELVETICA_10);
+                            iSetColor(255,255,255);
+                        }
+                    }
+
+                    m++;
+                    if(m==tdom)
+                        t=0;
+                }
+            }
+            iSetColor(255,255,255);
+            iText(70,500,month[monthfd.month-1],GLUT_BITMAP_HELVETICA_18);
+            iText(135,500,year[year1],GLUT_BITMAP_HELVETICA_18);
+            iRectangle(60,60,420,420);
+        }
+        iSetColor(220,220,220);
+        iFilledRectangle(350,500,70,20);
+        iSetColor(0,0,0);
+        iText(357,505,"PREVIOUS",GLUT_BITMAP_HELVETICA_10);
+
+        iSetColor(220,220,220);
+        iFilledRectangle(425,500,40,20);
+        iSetColor(0,0,0);
+        iText(430,505,"NEXT",GLUT_BITMAP_HELVETICA_10);
+        iSetColor(220,220,220);
+        iFilledRectangle(440,30,75,18);
+        iSetColor(0,0,0);
+        iText(445,35,"ALL EVENTS",GLUT_BITMAP_HELVETICA_10);
+        iSetColor(255,255,255);
+
+    }
+    else if(display==1 || display==3)
+    {
+        iText(50,550,"EVENT OF ",GLUT_BITMAP_TIMES_ROMAN_24);
+        iText(180,550,d[event[index].thatday.day-1],GLUT_BITMAP_TIMES_ROMAN_24);
+        iText(200,550," ",GLUT_BITMAP_TIMES_ROMAN_24);
+        iText(210,550,month[event[index].thatday.month-1],GLUT_BITMAP_TIMES_ROMAN_24);
+        iText(265,550," ",GLUT_BITMAP_TIMES_ROMAN_24);
+        iText(275,550,year[(event[index].thatday.year)%1950],GLUT_BITMAP_TIMES_ROMAN_24);
+
+        iText(50,500,"TITLE: ",GLUT_BITMAP_HELVETICA_18);
+        iRectangle(165,495,165,25);
+        iText(50,460,"LOCATION: ",GLUT_BITMAP_HELVETICA_18);
+        iRectangle(165,452,350,25);
+        iText(50,412,"FROM: ",GLUT_BITMAP_HELVETICA_18);
+        iRectangle(165,407,80,25);
+        iText(50,367,"TO: ",GLUT_BITMAP_HELVETICA_18);
+        iRectangle(165,360,80,25);
+        iText(50,325,"NOTE: ",GLUT_BITMAP_HELVETICA_18);
+        iRectangle(165,295,350,45);
+
+        iText(170,505,event[index].title,GLUT_BITMAP_HELVETICA_10);
+        iText(170,463,event[index].location,GLUT_BITMAP_HELVETICA_10);
+        iText(170,417,event[index].from,GLUT_BITMAP_HELVETICA_10);
+        iText(170,370,event[index].to,GLUT_BITMAP_HELVETICA_10);
+        iText(170,312,event[index].note2,GLUT_BITMAP_HELVETICA_10);
+        iText(170,327,event[index].note,GLUT_BITMAP_HELVETICA_10);
+        if(display==1)
+        {
+            iSetColor(220,220,220);
+            iFilledRectangle(100,50,60,25);
+            iFilledRectangle(400,50,60,25);
+            iSetColor(0,0,0);
+            iText(105,55,"SAVE",GLUT_BITMAP_HELVETICA_18);
+            iText(405,55,"BACK",GLUT_BITMAP_HELVETICA_18);
+            iSetColor(255,255,255);
+        }
+        else
+        {
+            iSetColor(220,220,220);
+            iFilledRectangle(250,50,85,25);
+            iSetColor(255,255,255);
+            iText(255,55,"MODIFY",GLUT_BITMAP_HELVETICA_18);
+        }
+    }
+    else if(display==2){
+        if(cnt==0)
+            iText(140,350,"!!!THERE IS NO EVENT",GLUT_BITMAP_TIMES_ROMAN_24);
+        iText(130,550,"DETAILS OF ALL EVENTS",GLUT_BITMAP_TIMES_ROMAN_24);
+        iSetColor(220,220,220);
+        iFilledRectangle(450,10,45,20);
+        iSetColor(0,0,0);
+        iText(455,15,"BACK",GLUT_BITMAP_9_BY_15);
+        iSetColor(255,255,255);
+        if(cnt>=3){
+            if(itemp){
+                iSetColor(220,220,220);
+                iFilledRectangle(350,500,70,20);
+                iSetColor(0,0,0);
+                iText(357,505,"PREVIOUS",GLUT_BITMAP_HELVETICA_10);
+            }
+            if((itemp+1)*3<cnt){
+                iSetColor(220,220,220);
+                iFilledRectangle(425,500,40,20);
+                iSetColor(0,0,0);
+                iText(430,505,"NEXT",GLUT_BITMAP_HELVETICA_10);
+            }
+        }
+        for(i=0;(i+itemp*3<cnt) && i<3;i++)
+        {
+            iSetColor(255,255,255);
+            iText(50,460-(i%3)*150,d[event[i+itemp*3].thatday.day-1],GLUT_BITMAP_HELVETICA_18);
+            iText(65,460-(i%3)*150," ",GLUT_BITMAP_HELVETICA_18);
+            iText(72,460-(i%3)*150,month[event[i+itemp*3].thatday.month-1],GLUT_BITMAP_HELVETICA_18);
+            iText(115,460-(i%3)*150," ",GLUT_BITMAP_HELVETICA_18);
+            iText(120,460-(i%3)*150,year[(event[i+itemp*3].thatday.year)%1950],GLUT_BITMAP_HELVETICA_18);
+            iText(50,440-(i%3)*150,"TITLE: ",GLUT_BITMAP_9_BY_15);
+            iText(50,420-(i%3)*150,"LOCATION: ",GLUT_BITMAP_9_BY_15);
+            iText(50,400-(i%3)*150,"FROM: ",GLUT_BITMAP_9_BY_15);
+            iText(50,380-(i%3)*150,"TO: ",GLUT_BITMAP_9_BY_15);
+            iText(50,360-(i%3)*150,"NOTE: ",GLUT_BITMAP_9_BY_15);
+            iText(150,440-(i%3)*150+3,event[i+itemp*3].title,GLUT_BITMAP_HELVETICA_12);
+            iText(150,422-(i%3)*150+1,event[i+itemp*3].location,GLUT_BITMAP_HELVETICA_10);
+            iText(150,402-(i%3)*150+3,event[i+itemp*3].from,GLUT_BITMAP_HELVETICA_10);
+            iText(150,382-(i%3)*150+3,event[i+itemp*3].to,GLUT_BITMAP_HELVETICA_10);
+            iText(150,347-(i%3)*150+2,event[i+itemp*3].note2,GLUT_BITMAP_HELVETICA_10);
+            iText(150,362-(i%3)*150+2,event[i+itemp*3].note,GLUT_BITMAP_HELVETICA_10);
+            if((i+itemp*3)%3==0)
+            {
+                iSetColor(255,255,255);
+                iFilledRectangle(540,400,16,16);
+                iFilledRectangle(540,420,16,16);
+                iSetColor(255,0,0);
+                for(pen=0;pen<1;pen+=.1)
+                {
+                    iLine(540,400+pen,556,416+pen);
+                    iLine(540,400-pen,556,416-pen);
+                    iLine(540,416-pen,556,400-pen);
+                    iLine(540,416+pen,556,400+pen);
+                }
+                iSetColor(0,0,0);
+                for(pen=0;pen<2;pen+=0.1)
+                {
+                    iLine(547-pen,427+pen,553-pen,433+pen);
+                    iLine(541,421,546-pen,426+pen);
+                    iLine(547+pen,427-pen,553+pen,433-pen);
+                    iLine(541,421,546+pen,426-pen);
+                }
+                iSetColor(255,255,255);
+            }
+            if((i+itemp*3)%3==1)
+            {
+                iFilledRectangle(540,250,16,16);
+                iFilledRectangle(540,270,16,16);
+                iSetColor(255,0,0);
+                for(pen=0;pen<1;pen+=.1)
+                {
+                    iLine(540,250+pen,556,266+pen);
+                    iLine(540,250-pen,556,266-pen);
+                    iLine(540,266-pen,556,250-pen);
+                    iLine(540,266+pen,556,250+pen);
+                }
+                iSetColor(0,0,0);
+                for(pen=0;pen<2;pen+=0.1)
+                {
+                    iLine(547-pen,277+pen,553-pen,283+pen);
+                    iLine(541,271,546-pen,276+pen);
+                    iLine(547+pen,277-pen,553+pen,283-pen);
+                    iLine(541,271,546+pen,276-pen);
+                }
+                iSetColor(255,255,255);
+            }
+            if((i+itemp*3)%3==2)
+            {
+                iFilledRectangle(540,100,16,16);
+                iFilledRectangle(540,120,16,16);
+                iSetColor(255,0,0);
+                for(pen=0;pen<1;pen+=.1)
+                {
+                    iLine(540,100+pen,556,116+pen);
+                    iLine(540,100-pen,556,116-pen);
+                    iLine(540,116-pen,556,100-pen);
+                    iLine(540,116+pen,556,100+pen);
+                }
+                iSetColor(0,0,0);
+                for(pen=0;pen<2;pen+=0.1)
+                {
+                    iLine(547-pen,127+pen,553-pen,133+pen);
+                    iLine(541,121,546-pen,126+pen);
+                    iLine(547+pen,127-pen,553+pen,133-pen);
+                    iLine(541,121,546+pen,126-pen);
+                }
+                iSetColor(255,255,255);
+            }
+        }
+    }
+}
+
+void iMouseMove(int mx, int my){}
+
+int detertotalday(int x,int y)
+{
+    switch(x)
+    {
+        case 1:return 31;
+        case 2:if(y%400==0 || (y%100!=0 && y%4==0))return 29;
+            return 28;
+        case 3:return 31;
+        case 4:return 30;
+        case 5:return 31;
+        case 6:return 30;
+        case 7:return 31;
+        case 8:return 31;
+        case 9:return 30;
+        case 10:return 31;
+        case 11:return 30;
+        case 12:return 31;
+    }
+}
+int check(int mx,int my)
+{
+    int i=0;
+    for(;i<tdom;i++)
+    {
+        if((mx>=dayposition[i].x1 && mx<=dayposition[i].x2) && (my>=dayposition[i].y1 && my<=dayposition[i].y2))
+            return i+1;
+    }
+    return 0;
+}
+
+void iMouse(int button, int state, int mx, int my)
+{
+    if(button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
+    {
+        printf("%d %d\n",mx,my);
+        if(display==0)
+        {
+            tp=check(mx,my);
+            if(tp)
+            {
+                event[cnt].thatday.day=tp;
+                event[cnt].thatday.month=monthfd.month;
+                event[cnt].thatday.year=monthfd.year;
+                mx=0;
+                my=0;
+                display=1;
+                index=cnt;
+            }
+            if((mx>=350 && mx<=420) && (my>=500 && my<=520))
+            {
+                monthfd.month--;
+                if(monthfd.month==0)
+                {
+                    monthfd.month=12;
+                    year1--;
+                    monthfd.year--;
+                }
+                tdom=detertotalday(monthfd.month,monthfd.year);
+                monthfd.daycount=(monthfd.daycount-tdom%7);
+                if(monthfd.daycount<0)
+                    monthfd.daycount+=7;
+                calculate();
+            }
+            if((mx>=425 && mx<=460) && (my>=500 && my<=520))
+            {
+                monthfd.daycount=(monthfd.daycount+tdom)%7;
+                monthfd.month++;
+                if(monthfd.month==13)
+                {
+                    monthfd.month=1;
+                    year1++;
+                    monthfd.year++;
+                }
+                tdom=detertotalday(monthfd.month,monthfd.year);
+                calculate();
+            }
+            if((mx>=440 && mx<=515) && (my>=30 && my<=50))
+            {
+                sortevent();
+                display=2;
+            }
+        }
+        else if(display==1 || display==3)
+        {
+            if((mx>=165 && mx<=330) && (my>=495 && my<=520))
+            {
+                tkk=1;
+                box=1;
+                saveother(1);
+            }
+            else if((mx>=165 && mx<=515) && (my>=452 && my<=487))
+            {
+                tkk=1;
+                box=2;
+                saveother(2);
+            }
+            else if((mx>=165 && mx<=245) && (my>=407 && my<=432))
+            {
+                tkk=1;
+                box=3;
+                saveother(3);
+            }
+            else if((mx>=165 && mx<=245) && (my>=360 && my<=385))
+            {
+                tkk=1;
+                box=4;
+                saveother(4);
+            }
+            else if((mx>=165 && mx<=515) && (my>=295 && my<=340))
+            {
+                tkk=1;
+                box=5;
+                saveother(5);
+            }
+            else if(display==1 && (mx>=100 && mx<=160) && (my>=50 && my<=75))
+            {
+                saveother(0);
+                event[cnt].dayvalue=event[cnt].thatday.year*10000+event[cnt].thatday.month*100+event[cnt].thatday.day;
+                cnt++;
+                mx=0;
+                my=0;
+                box=0;
+                saveeventinfile();
+                display=0;
+            }
+            else if(display==1 && (mx>=400 && mx<=460) && (my>=50 && my<=75))
+            {
+                deleteevent(index);
+                cnt++;
+                display=0;
+                mx=0;
+                my=0;
+                box=0;
+            }
+            else if(display==3 && (mx>=250 && mx<=385) && (my>=50 && my<=75))
+            {
+                saveother(0);
+                mx=0;
+                my=0;
+                box=0;
+                saveeventinfile();
+                display=2;
+            }
+        }
+        else if(display==2)
+        {
+            if((mx>=450 && mx<=495) && (my>=10 && my<=30))
+            {
+                mx=0;
+                my=0;
+                itemp=0;
+                display=0;
+            }
+            else if(itemp && (mx>=350 && mx<=420) && (my>=500 && my<=520))
+                itemp--;
+            else if((itemp+1)*3<cnt && (mx>=425 && mx<=460) && (my>=500 && my<=520))
+                itemp++;
+            else if(((itemp*3+1)<cnt) && (mx>=540 && mx<=556) && (my>=250 && my<=266))
+            {
+                deleteevent(itemp*3+1);
+                if(((itemp)*3==cnt) && itemp)
+                    itemp--;
+            }
+            else if(((itemp*3+2)<cnt) && (mx>=540 && mx<=556) && (my>=100 && my<=116))
+            {
+                deleteevent(itemp*3+2);
+                if(((itemp)*3==cnt) && itemp)
+                    itemp--;
+            }
+            else if(((itemp*3)<cnt) && (mx>=540 && mx<=556) && (my>=400 && my<=416))
+            {
+                deleteevent(itemp*3);
+                if(((itemp)*3==cnt) && itemp)
+                    itemp--;
+            }
+            else if(((itemp*3+1)<cnt) && (mx>=540 && mx<=556) && (my>=270 && my<=286))
+            {
+                display=3;
+                index=itemp*3+1;
+            }
+            else if(((itemp*3+2)<cnt) && (mx>=540 && mx<=556) && (my>=120 && my<=136))
+            {
+                display=3;
+                index=itemp*3+2;
+            }
+            else if(((itemp*3)<cnt) && (mx>=540 && mx<=556) && (my>=420 && my<=436))
+            {
+                display=3;
+                index=itemp*3;
+            }
+        }
+    }
+    if(button == GLUT_RIGHT_BUTTON && state == GLUT_DOWN){}
+}
+
+void saveother(int box)
+{
+    strdelcursor(event[index].title);
+    strdelcursor(event[index].location);
+    strdelcursor(event[index].from);
+    strdelcursor(event[index].to);
+    strdelcursor(event[index].note);
+    strdelcursor(event[index].note2);
+}
+
+void sortevent()
+{
+    k=0;
+    for(i=0;i<cnt;i++)
+        if(event[i].dayvalue>todayvalue)
+            k++;
+
+    for(i=0;i<cnt-1;i++)
+    {
+        for(j=i+1;j<cnt;j++)
+        {
+            if((event[i].dayvalue-todayvalue)<(event[j].dayvalue-todayvalue))
+            {
+                temp=event[i];
+                event[i]=event[j];
+                event[j]=temp;
+                determinenote[i]=determinenote[i]^determinenote[j];
+                determinenote[j]=determinenote[i]^determinenote[j];
+                determinenote[i]=determinenote[i]^determinenote[j];
+            }
+        }
+    }
+    for(i=0;i<k-1;i++)
+    {
+        for(j=i+1;j<k;j++)
+        {
+            if((event[i].dayvalue-todayvalue)>(event[j].dayvalue-todayvalue))
+            {
+                temp=event[i];
+                event[i]=event[j];
+                event[j]=temp;
+                determinenote[i]=determinenote[i]^determinenote[j];
+                determinenote[j]=determinenote[i]^determinenote[j];
+                determinenote[i]=determinenote[i]^determinenote[j];
+            }
+        }
+    }
+}
+
+void strdel(char *p)
+{
+    p=p+strlen(p)-1;
+    *p='\0';
+}
+
+void strdelcursor(char *p)
+{
+    for(i=0;i<strlen(p);i++)
+    {
+        if(*(p+i)=='|')
+        {
+            for(j=i;j<strlen(p)-1;j++)
+                *(p+j)=*(p+j+1);
+            *(p+strlen(p)-1)='\0';
+        }
+    }
+}
+
+void cursorindicator()
+{
+    if(box)
+    if(cursor>5)
+    {
+        cursor=0;
+        switch(box)
+        {
+            case 1:strcat(event[index].title,"|");
+                break;
+            case 2:strcat(event[index].location,"|");
+                break;
+            case 3:strcat(event[index].from,"|");
+                break;
+            case 4:strcat(event[index].to,"|");
+                break;
+            case 5:if(!determinenote[index])
+                    strcat(event[index].note,"|");
+                else
+                    strcat(event[index].note2,"|");
+                break;
+            default:
+                break;
+        }
+    }
+    else
+    {
+        cursor++;
+        switch(box)
+        {
+            case 1:strdelcursor(event[index].title);
+                break;
+            case 2:strdelcursor(event[index].location);
+                break;
+            case 3:strdelcursor(event[index].from);
+                break;
+            case 4:strdelcursor(event[index].to);
+                break;
+            case 5:if(!determinenote[index])
+                    strdelcursor(event[index].note);
+                else
+                    strdelcursor(event[index].note2);
+                break;
+            default:
+                break;
+        }
+    }
+}
+
+void iKeyboard(unsigned char key)
+{
+    iPauseTimer(timerver);
+    if(box==5 && strlen(event[index].note)>50 && key==' ')
+    {
+        strdelcursor(event[index].note);
+        determinenote[index]=1;
+    }
+    else if(box==5 && strlen(event[index].note2)<2 && key=='\b')
+    {
+        strdelcursor(event[index].note2);
+        determinenote[index]=0;
+    }
+    if((key=='\n' || key=='\r'))
+    {
+        tkk=0;
+        switch(box)
+        {
+            case 1:strdelcursor(event[index].title);
+                break;
+            case 2:strdelcursor(event[index].location);
+                break;
+            case 3:strdelcursor(event[index].from);
+                break;
+            case 4:strdelcursor(event[index].to);
+                break;
+            case 5:strdelcursor(event[index].note);
+                strdelcursor(event[index].note2);
+                break;
+            default:
+                break;
+        }
+        box=0;
+    }
+    else if(tkk)
+    {
+        if(key!='\b')
+        {
+            ch[0]=key;
+            switch(box)
+            {
+                case 1:ch[0]&=(~32);
+                    strcat(event[index].title,ch);
+                    break;
+                case 2:strcat(event[index].location,ch);
+                    break;
+                case 3:strcat(event[index].from,ch);
+                    break;
+                case 4:strcat(event[index].to,ch);
+                    break;
+                case 5:if(!determinenote[index])
+                        strcat(event[index].note,ch);
+                    else
+                        strcat(event[index].note2,ch);
+                    break;
+                default:
+                    break;
+            }
+        }
+        else if(key=='\b')
+        {
+            switch(box)
+            {
+                case 1:if(strlen(event[index].title)>1)
+                        strdel(event[index].title);
+                    break;
+                case 2:if(strlen(event[index].location)>1)
+                        strdel(event[index].location);
+                    break;
+                case 3:if(strlen(event[index].from)>1)
+                        strdel(event[index].from);
+                    break;
+                case 4:if(strlen(event[index].to)>1)
+                        strdel(event[index].to);
+                    break;
+                case 5:if(!determinenote[index])
+                        if(strlen(event[index].note)>1)
+                            strdel(event[index].note);
+                    else
+                        if(strlen(event[index].note2)>1)
+                            strdel(event[index].note2);
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+    iResumeTimer(timerver);
+}
+void iSpecialKeyboard(unsigned char key)
+{
+    if(key == GLUT_KEY_END)
+    {
+        exit(0);
+    }
+}
+void calculate()
+{
+    for(i=5;i>-1;i--)
+    {
+        for(j=0;j<7;j++)
+        {
+            if((j+1)%7==monthfd.daycount && i==5)
+            {
+                t=1;
+                m=0;
+            }
+            if(t)
+            {
+                dayposition[m].x1=60*(j+1);
+                dayposition[m].x2=60*(j+1)+60;
+                dayposition[m].y1=60*(i+1);
+                dayposition[m].y2=60*(i+1)+60;
+                dayposition[m].date.day=m+1;
+                dayposition[m].date.daycount=monthfd.daycount;
+                dayposition[m].date.month=monthfd.month;
+                dayposition[m].date.year=monthfd.year;
+                m++;
+                if(m==tdom)
+                    t=0;
+            }
+        }
+    }
+}
+
+void saveeventinfile()
+{
+    fp=fopen("event.txt","w");
+    if(fp==NULL)
+    {
+        perror("File cannot open.");
+        exit(1);
+    }
+    fprintf(fp,"%d\n",cnt);
+    for(i=0;i<cnt;i++)
+    {
+        fprintf(fp,"%d\n%d\n%d-%d-%d\n",event[i].dayvalue,determinenote[i],event[i].thatday.day,event[i].thatday.month,event[i].thatday.year);
+        if(strcmp(event[i].title," ")!=0)
+        {
+            fprintf(fp,"1\n");
+            fprintf(fp,"%s\n",event[i].title);
+        }
+        else
+            fprintf(fp,"0\n");
+        if(strcmp(event[i].location," ")!=0)
+        {
+            fprintf(fp,"1\n");
+            fprintf(fp,"%s\n",event[i].location);
+        }
+        else
+            fprintf(fp,"0\n");
+        if(strcmp(event[i].from," ")!=0)
+        {
+            fprintf(fp,"1\n");
+            fprintf(fp,"%s\n",event[i].from);
+        }
+        else
+            fprintf(fp,"0\n");
+        if(strcmp(event[i].to," ")!=0)
+        {
+            fprintf(fp,"1\n");
+            fprintf(fp,"%s\n",event[i].to);
+        }
+        else
+            fprintf(fp,"0\n");
+        if(strcmp(event[i].note," ")!=0)
+        {
+            fprintf(fp,"1\n");
+            fprintf(fp,"%s\n",event[i].note);
+        }
+        else
+            fprintf(fp,"0\n");
+        if(determinenote[i])
+            fprintf(fp,"%s\n",event[i].note2);
+    }
+    fclose(fp);
+}
+
+void deleteevent(int index1)
+{
+    event[index1].dayvalue=0;
+    strcpy(event[index1].title," ");
+    strcpy(event[index1].location," ");
+    strcpy(event[index1].from," ");
+    strcpy(event[index1].to," ");
+    strcpy(event[index1].note," ");
+    strcpy(event[index1].note2,"  ");
+    event[index1].thatday.day=0;
+    event[index1].thatday.month=0;
+    event[index1].thatday.year=0;
+    determinenote[index1]=0;
+    sortevent();
+    cnt--;
+    saveeventinfile();
+}
+
+void checkfilepointer(FILE *fp)
+{
+    if(fp==NULL)
+    {
+        perror("File cannot open.");
+        exit(1);
+    }
+}
+
+int main()
+{
+    fp=fopen("dayname.txt","r");
+    checkfilepointer(fp);
+    for(i=0;i<7;i++)
+        fscanf(fp,"%s\n",str[i]);
+    fclose(fp);
+
+    fp=fopen("day.txt","r");
+    checkfilepointer(fp);
+    for(i=0;i<31;i++)
+        fscanf(fp,"%s\n",d[i]);
+    fclose(fp);
+
+    fp=fopen("year.txt","r");
+    checkfilepointer(fp);
+    for(i=0;i<100;i++)
+        fscanf(fp,"%s\n",year[i]);
+    fclose(fp);
+
+    fp=fopen("monthname.txt","r");
+    checkfilepointer(fp);
+    for(i=0;i<12;i++)
+        fscanf(fp,"%s\n",month[i]);
+    fclose(fp);
+
+    for(i=0;i<50;i++)
+    {
+        event[i].dayvalue=0;
+        strcpy(event[i].title," ");
+        strcpy(event[i].location," ");
+        strcpy(event[i].from," ");
+        strcpy(event[i].to," ");
+        strcpy(event[i].note," ");
+        strcpy(event[i].note2," ");
+    }
+
+    fp=fopen("event.txt","r");
+    checkfilepointer(fp);
+    fscanf(fp,"%d\n",&cnt);
+    for(i=0;i<cnt;i++)
+    {
+        fscanf(fp,"%d\n%d\n%d-%d-%d\n",&event[i].dayvalue,&determinenote[i],&event[i].thatday.day,&event[i].thatday.month,&event[i].thatday.year);
+        fscanf(fp,"%d\n",&j);
+        if(j)
+            fscanf(fp,"%[^\n]\n",event[i].title);
+        fscanf(fp,"%d\n",&j);
+        if(j)
+            fscanf(fp,"%[^\n]\n",event[i].location);
+        fscanf(fp,"%d\n",&j);
+        if(j)
+            fscanf(fp,"%[^\n]\n",event[i].from);
+        fscanf(fp,"%d\n",&j);
+        if(j)
+            fscanf(fp,"%[^\n]\n",event[i].to);
+        fscanf(fp,"%d\n",&j);
+        if(j)
+            fscanf(fp,"%[^\n]\n",event[i].note);
+        if(determinenote[i])
+            fscanf(fp,"%[^\n]\n",event[i].note2);
+    }
+    fclose(fp);
+
+    SYSTEMTIME t;
+    GetSystemTime(&t);
+    today.day=t.wDay;
+    today.month=t.wMonth;
+    today.year=t.wYear;
+    todayvalue=today.year*10000+today.month*100+today.day;
+    year1=today.year%1950;
+    today.daycount=(t.wDayOfWeek+2)%7;
+    strcpy(today.dayname,str[today.daycount]);
+    monthfd.day=1;
+    monthfd.daycount=today.daycount-today.day%7+1;
+
+    if(monthfd.daycount<0)
+        monthfd.daycount+=7;
+
+    monthfd.month=t.wMonth;
+    monthfd.year=t.wYear;
+    strcpy(monthfd.dayname,str[monthfd.daycount]);
+    tdom=detertotalday(monthfd.month,monthfd.year);
+    calculate();
+    timerver=iSetTimer(100,cursorindicator);
+
+    iInitialize(560, 600, "CALENDER");
+
+    return 0;
+}

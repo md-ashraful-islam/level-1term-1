@@ -1,0 +1,2 @@
+The summation of the two number is 15
+The sum of 5 and 10 is 15.

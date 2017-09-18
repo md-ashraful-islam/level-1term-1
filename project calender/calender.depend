@@ -1,0 +1,31 @@
+# depslib dependency file v1.0
+1499857696 source:c:\users\user\desktop\calender\imain.cpp
+	"iGraphics.h"
+	<stdio.h>
+	<windows.h>
+	<string.h>
+
+1499409764 c:\users\user\desktop\calender\igraphics.h
+	<stdio.h>
+	<stdlib.h>
+	<gl/glut.h>
+	<time.h>
+	<math.h>
+	<windows.h>
+	<gl\glaux.h>
+
+1499857696 source:f:\1-1\project calender\imain.cpp
+	"iGraphics.h"
+	<stdio.h>
+	<windows.h>
+	<string.h>
+
+1499409764 f:\1-1\project calender\igraphics.h
+	<stdio.h>
+	<stdlib.h>
+	<gl/glut.h>
+	<time.h>
+	<math.h>
+	<windows.h>
+	<gl\glaux.h>
+
